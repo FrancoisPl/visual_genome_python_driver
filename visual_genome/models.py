@@ -59,8 +59,8 @@ Graphs contain objects, relationships and attributes
   attributes       Attribute array
 """
 class Graph:
-  def __init__(self, image, objects, relationships, attributes):
-    self.image = image
+  def __init__(self, image_id, objects, relationships, attributes):
+    self.image_id = image_id
     self.objects = objects
     self.relationships = relationships
     self.attributes = attributes

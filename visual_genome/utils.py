@@ -33,7 +33,7 @@ def ParseSynset(canon):
 """
 Helper to parse a Graph object from API data.
 """
-def ParseGraph(data, image):
+def ParseGraph(data, image_id):
   objects = []
   object_map = {}
   relationships = []
@@ -56,7 +56,7 @@ def ParseGraph(data, image):
   for atr in data['attributes']:
     attributes.append(Attribute(atr['id'], object_map[atr['subject']], \
         atr['attribute'], ParseSynset(atr['attribute_canon'])))
-  return Graph(image, objects, relationships, attributes)
+  return Graph(image_id, objects, relationships, attributes)
 
 """
 Helper to parse the image data for one image.

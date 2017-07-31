@@ -57,16 +57,11 @@ def GetAllQAs(dataDir=None):
 """
 Load a single scene graph from a .json file.
 """
-def GetSceneGraph(image_id, images='data/', imageDataDir='data/by-id/', synsetFile='data/synsets.json'):
-  if type(images) is str:
-    # Instead of a string, we can pass this dict as the argument `images`
-    images = {img.id:img for img in GetAllImageData(images)}
-
+def GetSceneGraph(image_id, imageDataDir='data/by-id/', synsetFile='data/synsets.json'):
   fname = str(image_id) + '.json'
-  image = images[image_id]
   data = json.load(open(imageDataDir + fname, 'r'))
 
-  scene_graph = ParseGraphLocal(data, image)
+  scene_graph = ParseGraphLocal(data, image_id)
   scene_graph = InitSynsets(scene_graph, synsetFile)
   return scene_graph
 
@@ -81,7 +76,6 @@ Get scene graphs given locally stored .json files; requires `SaveSceneGraphsById
 def GetSceneGraphs(startIndex=0, endIndex=-1,
                    dataDir='data/', imageDataDir='data/by-id/',
                    minRels=0, maxRels=100):
-  images = {img.id:img for img in GetAllImageData(dataDir)}
   scene_graphs = []
 
   img_fnames = os.listdir(imageDataDir)
@@ -89,7 +83,7 @@ def GetSceneGraphs(startIndex=0, endIndex=-1,
 
   for fname in img_fnames[startIndex : endIndex]:
     image_id = int(fname.split('.')[0])
-    scene_graph = GetSceneGraph(image_id, images, imageDataDir, dataDir+'synsets.json')
+    scene_graph = GetSceneGraph(image_id, imageDataDir, dataDir+'synsets.json')
     n_rels = len(scene_graph.relationships)
     if (minRels <= n_rels <= maxRels):
       scene_graphs.append(scene_graph)
@@ -133,7 +127,7 @@ Modified version of `utils.ParseGraph`.
 global count_skips
 count_skips = [0,0]
 
-def ParseGraphLocal(data, image, verbose=False):
+def ParseGraphLocal(data, image_id, verbose=False):
   global count_skips
   objects = []
   object_map = {}
@@ -163,7 +157,7 @@ def ParseGraphLocal(data, image, verbose=False):
         count_skips[1] += 1
   if verbose:
     print 'Skipped {} rels, {} attrs total'.format(*count_skips)
-  return Graph(image, objects, relationships, attributes)
+  return Graph(image_id, objects, relationships, attributes)
 
 """
 Convert synsets in a scene graph from strings to Synset objects.
