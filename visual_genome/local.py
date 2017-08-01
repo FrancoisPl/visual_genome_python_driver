@@ -118,9 +118,31 @@ def MapObject(object_map, objects, obj):
 
     object_.attributes = attrs
     object_map[oid] = object_
+    objects.append(object_)
 
-  return object_map, object_
+  return object_map, objects, object_
 
+def SerializeObject(obj):
+    data = {}
+    data['object_id'] = obj.id
+    data['w'] = obj.width
+    data['h'] = obj.height
+    data['names'] = obj.names
+    data['synsets'] = [syn.name for syn in obj.synsets]
+    data['x'] = obj.x
+    data['y'] = obj.y
+
+    return data
+
+def SerializeRelationship(relationship):
+    data = {}
+    data['relationship_id'] = relationship.id
+    data['predicate'] = relationship.predicate
+    data['object'] = SerializeObject(relationship.object)
+    data['subject'] = SerializeObject(relationship.subject)
+    data['synsets'] = [syn.name for syn in relationship.synset]
+
+    return data
 
 """
 Modified version of `utils.ParseGraph`.
@@ -142,6 +164,16 @@ def ParseGraphLocal(data, image_id):
       rid = rel['relationship_id']
       relationships.append(Relationship(rid, s, v, o, rel['synsets']))
   return Graph(image_id, objects, relationships, attributes)
+
+
+def SaveGraphLocal(scene_graph, image_id, imageDataDir='data/by-id/'):
+    relationships = []
+    for relationship in scene_graph.relationships:
+        relationships.append(SerializeRelationship(relationship))
+    sg_data = {'relationships': relationships, 'image_id': image_id}
+    img_fname = str(image_id) + '.json'
+    with open(os.path.join(imageDataDir, img_fname), 'w') as f:
+      json.dump(sg_data, f)
 
 """
 Convert synsets in a scene graph from strings to Synset objects.
