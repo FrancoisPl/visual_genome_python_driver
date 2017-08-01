@@ -93,15 +93,13 @@ def GetSceneGraphs(startIndex=0, endIndex=-1,
 Use object ids as hashes to `src.models.Object` instances. If item not
   in table, create new `Object`. Used when building scene graphs from json.
 """
-def MapObject(object_map, obj):
-
+def MapObject(object_map, objects, obj):
   oid = obj['object_id']
   obj['id'] = oid
   del obj['object_id']
 
   if oid in object_map:
     object_ = object_map[oid]
-
   else:
     if 'attributes' in obj:
       attrs = obj['attributes']
@@ -112,6 +110,9 @@ def MapObject(object_map, obj):
       obj['width'] = obj['w']
       obj['height'] = obj['h']
       del obj['w'], obj['h']
+    if 'name' in obj:
+        obj['names'] = [obj['name']]
+        del obj['name']
 
     object_ = Object(**obj)
 
@@ -127,40 +128,19 @@ Modified version of `utils.ParseGraph`.
 global count_skips
 count_skips = [0,0]
 
-def ParseGraphLocal(data, image_id, verbose=False):
+def ParseGraphLocal(data, image_id):
   global count_skips
   objects = []
   object_map = {}
   relationships = []
   attributes = []
 
-  for obj in data['objects']:
-    object_map, o_ = MapObject(object_map, obj)
-    objects.append(o_)
   for rel in data['relationships']:
-    if rel['subject_id'] in object_map and rel['object_id'] in object_map:
-      object_map, s = MapObject(object_map, {'object_id': rel['subject_id']})
+      object_map, objects, s = MapObject(object_map, objects, rel['subject'])
       v = rel['predicate']
-      object_map, o = MapObject(object_map, {'object_id': rel['object_id']})
+      object_map, objects, o = MapObject(object_map, objects, rel['object'])
       rid = rel['relationship_id']
       relationships.append(Relationship(rid, s, v, o, rel['synsets']))
-    else:
-      # Skip this relationship if we don't have the subject and object in 
-      #   the object_map for this scene graph. Some data is missing in this way.
-      count_skips[0] += 1
-  if 'attributes' in data:
-    for attr in data['attributes']:
-      a = attr['attribute']
-      if a['object_id'] in object_map:
-        attributes.append(Attribute(attr['attribute_id'],
-                                        Object(a['object_id'], a['x'],
-                                               a['y'], a['w'], a['h'],
-                                               a['names'], a['synsets']),
-                                        a['attributes'], a['synsets']))
-      else:
-        count_skips[1] += 1
-  if verbose:
-    print 'Skipped {} rels, {} attrs total'.format(*count_skips)
   return Graph(image_id, objects, relationships, attributes)
 
 """
@@ -282,4 +262,3 @@ def ParseGraphVRD(d):
     rels.append(Relationship(i, s, v, o, []))
 
   return Graph(image, objs, rels, atrs)
-
